@@ -4,6 +4,7 @@
 ## Allow multiple metrics
 ## Keep original order of models or arrange by rank
 #' @importFrom yardstick metric_set rmse
+#' @export
 calculate_metrics <- function(object,
                               column = NULL,
                               metric = metric_set(rmse),
