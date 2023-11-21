@@ -116,14 +116,14 @@ miter_fit.tbl_df <- function(data, workflow,
   }
 
   if (control$verbose) {
-    out <- fit(
+    out <- generics::fit(
       object = workflow,
       data = data,
       ...
     )
   } else {
     out <- suppressMessages(
-      fit(
+      generics::fit(
         object = workflow,
         data = data,
         ...
@@ -181,14 +181,14 @@ miter_fit.rsplit <- function(data, workflow,
   }
 
   if (control$verbose) {
-    out <- fit(
+    out <- generics::fit(
       object = workflow,
       data = rsample::training(data),
       ...
     )
   } else {
     out <- suppressMessages(
-      fit(
+      generics::fit(
         object = workflow,
         data = rsample::training(data),
         ...
@@ -305,7 +305,7 @@ miter_fit.nested_cv <- function(data, workflow,
       fitted_outer =
         list(
           suppressMessages(
-            fit(tuned_workflows, rsample::training(splits), ...)
+            generics::fit(tuned_workflows, rsample::training(splits), ...)
           )
         )
     ) %>%

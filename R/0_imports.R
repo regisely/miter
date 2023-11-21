@@ -13,3 +13,7 @@ dplyr::`%>%`
 #' @importFrom rlang :=
 #' @export
 rlang::`:=`
+
+#' @importFrom generics fit
+#' @export
+generics::fit

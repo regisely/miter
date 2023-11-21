@@ -43,10 +43,12 @@ test_that("holdout_time_split prop argument larger than ids", {
   )
 })
 
-test_that("holdout_time_split prop argument less than groups", {
+test_that("holdout_time_split function in prop argument", {
   miter_tbl <- icms_br %>%
     dplyr::group_by(state) %>%
-    holdout_time_split(prop = c(0.4, 0.5))
-  expect_identical(miter_tbl$splits[[1]]$in_id, miter_tbl$splits[[3]]$in_id)
-  expect_identical(miter_tbl$splits[[1]]$out_id, miter_tbl$splits[[3]]$out_id)
+    
+  expect_warning(
+    holdout_time_split(icms_br, prop = c(0.9, 0.8)),
+    "Length of `prop` larger than number of ids. Some values will be ignored."
+  )
 })

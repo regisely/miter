@@ -1,4 +1,5 @@
 ## Deal with select_best=TRUE in calculate_metrics
+## Remove warnings from NA values
 #' @importFrom ggplot2 autoplot ggplot aes geom_line geom_abline geom_point labs facet_wrap scale_color_manual geom_errorbar theme_bw geom_dotplot
 #' @importFrom rlang sym
 #' @export

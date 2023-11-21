@@ -26,3 +26,23 @@ control_miter_to_tune <- function (control = control_miter()) {
                )
   out
 }
+
+control_miter_to_race <- function (control = control_miter_race()) {
+  out <- finetune::control_race(
+                 verbose = control$verbose,
+                 verbose_elim = control$verbose_elim,
+                 allow_par = control$allow_par,
+                 extract = control$extract, 
+                 save_pred = control$save_pred,
+                 burn_in = control$burn_in,
+                 num_ties = control$num_ties,
+                 alpha = control$alpha,
+                 randomize = control$randomize,
+                 pkgs = control$pkgs,
+                 save_workflow = control$save_workflow,
+                 event_level = control$event_level, 
+                 parallel_over = control$parallel_over,
+                 backend_options = control$backend_options
+               )
+  out
+}

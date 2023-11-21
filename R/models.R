@@ -1,4 +1,21 @@
+##### Consertar initialize_all_models quando date_var=NULL
 #' @importFrom hardhat tune
+#' @export
+recipe_ts <- function(data,
+                      outcome_var,
+                      id_var = NULL,
+                      date_var = NULL) {
+
+  mv_vars <- colnames(data)[which(!colnames(data) %in%
+                                  c(id_var, outcome_var))]
+  formula_ts <- as.formula(
+    paste0(outcome_var, " ~ ", "`", date_var, "`")
+  )
+  recipe_ts <- recipes::recipe(formula_ts, data = data)
+  recipe_ts
+  
+}
+
 #' @export
 initialize_ts_models <- function(data,
                                  outcome_var,
@@ -9,8 +26,11 @@ initialize_ts_models <- function(data,
 
   require("modeltime")
 
-  mv_vars <- colnames(data)[which(!colnames(data) %in% c(id_var, outcome_var))]
-  formula_ts <- as.formula(paste0(outcome_var, " ~ ", "`", date_var, "`"))
+  mv_vars <- colnames(data)[which(!colnames(data) %in%
+                                  c(id_var, outcome_var))]
+  formula_ts <- as.formula(
+    paste0(outcome_var, " ~ ", "`", date_var, "`")
+  )
   recipe_ts <- recipes::recipe(formula_ts, data = data)
 
   wflow_naive <- workflows::workflow() %>%
@@ -41,7 +61,6 @@ initialize_ts_models <- function(data,
       parsnip::set_engine("auto_arima")
     )
 
-
   wflow_prophet <- workflows::workflow() %>%
     workflows::add_recipe(recipe_ts) %>%
     workflows::add_model(
@@ -51,20 +70,12 @@ initialize_ts_models <- function(data,
       parsnip::set_engine("prophet")
     )
 
-  wflow_adam <- workflows::workflow() %>%
-    workflows::add_recipe(recipe_ts) %>%
-    workflows::add_model(
-      modeltime::adam_reg() %>%
-      parsnip::set_engine("auto_adam")
-    )
-
   wflows <- list(
     NAIVE = wflow_naive,
     SNAIVE = wflow_snaive,
     ETS = wflow_ets,
     ARIMA = wflow_arima,
-    PROPHET = wflow_prophet,
-    ADAM = wflow_adam
+    PROPHET = wflow_prophet
   )
 
   wflows
@@ -97,8 +108,15 @@ initialize_all_models <- function(data,
                date_var
              ) %>%
     recipes::step_dummy(glue::glue("{date_var}_month"))
-  recipe_norm <- recipe_ml %>%
-    recipes::step_normalize(mv_vars[which(mv_vars != date_var)])
+  recipe_norm <- recipe_mv %>%
+    recipes::step_normalize(mv_vars[which(mv_vars != date_var)]) %>%
+    recipes::step_date(date_var) %>%
+    recipes::step_rm(
+               dplyr::contains("dow"),
+               dplyr::contains("year"),
+               date_var
+             ) %>%
+    recipes::step_dummy(glue::glue("{date_var}_month"))
 
   wflow_naive <- workflows::workflow() %>%
     workflows::add_recipe(recipe_ts) %>%
@@ -128,7 +146,6 @@ initialize_all_models <- function(data,
       parsnip::set_engine("auto_arima")
     )
 
-
   wflow_prophet <- workflows::workflow() %>%
     workflows::add_recipe(recipe_ts) %>%
     workflows::add_model(
@@ -136,13 +153,6 @@ initialize_all_models <- function(data,
         "regression"
       ) %>%
       parsnip::set_engine("prophet")
-    )
-
-  wflow_adam <- workflows::workflow() %>%
-    workflows::add_recipe(recipe_ts) %>%
-    workflows::add_model(
-      modeltime::adam_reg() %>%
-      parsnip::set_engine("auto_adam")
     )
 
   wflow_arima_boosted <- workflows::workflow() %>%
@@ -236,7 +246,6 @@ initialize_all_models <- function(data,
     ETS = wflow_ets,
     ARIMA = wflow_arima,
     PROPHET = wflow_prophet,
-    ADAM = wflow_adam,
     ARIMA_BOOSTED = wflow_arima_boosted,
     PROPHET_BOOSTED = wflow_prophet_boosted,
     GLMNET = wflow_glmnet,
@@ -250,7 +259,7 @@ initialize_all_models <- function(data,
 }
 
 #' @export
-initialize_ensemble_models <- function(preds) {
+initialize_ensemble_models <- function(preds, date_var) {
 
   ids <- attr(preds, "ids")
   outcome_var <- attr(preds, "outcome")
@@ -261,10 +270,12 @@ initialize_ensemble_models <- function(preds) {
     dplyr::select(
              dplyr::all_of(ids),
              models,
+             dplyr::all_of(date_var),
              dplyr::all_of(outcome_var),
              .pred
            ) %>%
-    tidyr::pivot_wider(names_from = "models", values_from = ".pred")
+    tidyr::pivot_wider(names_from = "models", values_from = ".pred") %>%
+    dplyr::select(-ids)
 
   formula_ensemble <- as.formula(
     paste(outcome_var, "~ .")
@@ -272,7 +283,8 @@ initialize_ensemble_models <- function(preds) {
   formula_lm <- as.formula(
     paste(outcome_var, "~ 0 + .")
   )
-  recipe_ensemble <- recipes::recipe(formula_ensemble, data = preds)
+  recipe_ensemble <- recipes::recipe(formula_ensemble, data = preds) %>%
+    step_rm(date_var)
 
   wflow_lm <- workflows::workflow() %>%
     workflows::add_recipe(recipe_ensemble) %>%

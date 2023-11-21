@@ -128,13 +128,6 @@ check_ts_models_packages <- function() {
     )
   }
 
-  if (!requireNamespace("smooth", quietly = TRUE)) {
-    stop(
-      "Package \"smooth\" must be installed to use this function.",
-      call. = FALSE
-    )
-  }
-
   invisible(NULL)
 
 }
@@ -201,13 +194,6 @@ check_models_packages <- function() {
   if (!requireNamespace("ranger", quietly = TRUE)) {
     stop(
       "Package \"ranger\" must be installed to use this function.",
-      call. = FALSE
-    )
-  }
-
-  if (!requireNamespace("smooth", quietly = TRUE)) {
-    stop(
-      "Package \"smooth\" must be installed to use this function.",
       call. = FALSE
     )
   }

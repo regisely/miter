@@ -5,6 +5,7 @@
 \alias{reexports}
 \alias{\%>\%}
 \alias{:=}
+\alias{fit}
 \title{Objects exported from other packages}
 \keyword{internal}
 \description{
@@ -13,6 +14,8 @@ below to see their documentation.
 
 \describe{
   \item{dplyr}{\code{\link[dplyr:reexports]{\%>\%}}}
+
+  \item{generics}{\code{\link[generics]{fit}}}
 
   \item{rlang}{\code{\link[rlang:dyn-dots]{:=}}}
 }}
