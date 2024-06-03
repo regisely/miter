@@ -1,4 +1,3 @@
-##### Consertar initialize_all_models quando date_var=NULL
 #' @importFrom hardhat tune
 #' @export
 recipe_ts <- function(data,
@@ -86,7 +85,9 @@ initialize_ts_models <- function(data,
 initialize_all_models <- function(data,
                                   outcome_var,
                                   id_var = NULL,
-                                  date_var = NULL) {
+                                  date_var = NULL,
+                                  outcome_lags = 0,
+                                  fix_arima_specs = FALSE) {
 
   check_models_packages()
 
@@ -98,9 +99,21 @@ initialize_all_models <- function(data,
     paste(outcome_var, "~", paste0("`", mv_vars, "`", collapse = " + "))
   )
 
+  if (outcome_lags != 0) {
+    data <- data %>%
+      generate_lags(outcome_var, lags = outcome_lags) %>%
+      drop_na()
+    mv_vars <- colnames(data)[which(!colnames(data) %in% c(id_var, outcome_var))]
+    formula_ml <- as.formula(
+      paste(outcome_var, "~", paste0("`", mv_vars, "`", collapse = " + "))
+    )
+  } else {
+    formula_ml <- formula_mv
+  }
+
   recipe_ts <- recipes::recipe(formula_ts, data = data)
   recipe_mv <- recipes::recipe(formula_mv, data = data)
-  recipe_ml <- recipe_mv %>%
+  recipe_ml <- recipes::recipe(formula_ml, data = data) %>%
     recipes::step_date(date_var) %>%
     recipes::step_rm(
                dplyr::contains("dow"),
@@ -108,7 +121,7 @@ initialize_all_models <- function(data,
                date_var
              ) %>%
     recipes::step_dummy(glue::glue("{date_var}_month"))
-  recipe_norm <- recipe_mv %>%
+  recipe_norm <- recipes::recipe(formula_ml, data = data) %>%
     recipes::step_normalize(mv_vars[which(mv_vars != date_var)]) %>%
     recipes::step_date(date_var) %>%
     recipes::step_rm(
@@ -146,15 +159,6 @@ initialize_all_models <- function(data,
       parsnip::set_engine("auto_arima")
     )
 
-  wflow_prophet <- workflows::workflow() %>%
-    workflows::add_recipe(recipe_ts) %>%
-    workflows::add_model(
-      modeltime::prophet_reg(
-        "regression"
-      ) %>%
-      parsnip::set_engine("prophet")
-    )
-
   wflow_arima_boosted <- workflows::workflow() %>%
     workflows::add_recipe(recipe_mv) %>%
     workflows::add_model(
@@ -166,6 +170,72 @@ initialize_all_models <- function(data,
         trees = tune()
         ) %>%
       parsnip::set_engine("auto_arima_xgboost")
+    )
+
+  if (fix_arima_specs) {
+    arima_tbl <- data %>%
+      dplyr::group_by(across({{ id_var }})) %>%
+      add_workflows(list(ARIMA = wflow_arima)) %>%
+      fit(data)
+    
+    arima_specs <- purrr::map(
+      arima_tbl$fitted_data,
+      ~ .x %>%
+        hardhat::extract_fit_engine() %>%
+        .$models %>%
+        .$model_1 %>%
+        .$arma
+    )
+
+    wflow_arima <- purrr::map(
+      arima_specs,
+      ~ workflows::workflow() %>%
+        workflows::add_recipe(recipe_ts) %>%
+        workflows::add_model(
+          modeltime::arima_reg(
+            non_seasonal_ar = !!.x[1],
+            non_seasonal_differences = !!.x[6],
+            non_seasonal_ma          = !!.x[2],
+            seasonal_ar              = !!.x[3],
+            seasonal_differences     = !!.x[7],
+            seasonal_ma              = !!.x[4],
+            seasonal_period          = !!.x[5]
+          ) %>%
+          parsnip::set_engine("arima")
+        )
+    )
+
+    wflow_arima_boosted <- purrr::map(
+      arima_specs,
+      ~ workflows::workflow() %>%
+        workflows::add_recipe(recipe_mv) %>%
+        workflows::add_model(
+          modeltime::arima_boost(
+            non_seasonal_ar = !!.x[1],
+            non_seasonal_differences = !!.x[6],
+            non_seasonal_ma          = !!.x[2],
+            seasonal_ar              = !!.x[3],
+            seasonal_differences     = !!.x[7],
+            seasonal_ma              = !!.x[4],
+            seasonal_period          = !!.x[5],
+            tree_depth = tune(),
+            learn_rate = tune(),
+            loss_reduction = tune(), 
+            min_n = tune(),
+            trees = tune()
+          ) %>%
+          parsnip::set_engine("arima_xgboost", method = "ML")
+        )
+    )
+  } 
+
+  wflow_prophet <- workflows::workflow() %>%
+    workflows::add_recipe(recipe_ts) %>%
+    workflows::add_model(
+      modeltime::prophet_reg(
+        "regression"
+      ) %>%
+      parsnip::set_engine("prophet")
     )
 
   wflow_prophet_boosted <-  workflows::workflow() %>%
@@ -189,6 +259,17 @@ initialize_all_models <- function(data,
         mixture = tune()
       ) %>%
       parsnip::set_engine("glmnet")
+    )
+
+  wflow_rf <- workflows::workflow() %>%
+    workflows::add_recipe(recipe_ml) %>%
+    workflows::add_model(
+      parsnip::rand_forest(
+        min_n = tune(),
+        trees = tune()
+      ) %>% 
+      parsnip::set_engine("ranger") %>%
+      parsnip::set_mode("regression")
     )
 
   wflow_xgboost <- workflows::workflow() %>%
@@ -229,17 +310,6 @@ initialize_all_models <- function(data,
       parsnip::set_mode("regression")
     )
 
-  wflow_rf <- workflows::workflow() %>%
-    workflows::add_recipe(recipe_norm) %>%
-    workflows::add_model(
-      parsnip::rand_forest(
-        min_n = tune(),
-        trees = tune()
-      ) %>% 
-      parsnip::set_engine("ranger") %>%
-      parsnip::set_mode("regression")
-    )
-
   wflows <- list(
     NAIVE = wflow_naive,
     SNAIVE = wflow_snaive,
@@ -249,10 +319,10 @@ initialize_all_models <- function(data,
     ARIMA_BOOSTED = wflow_arima_boosted,
     PROPHET_BOOSTED = wflow_prophet_boosted,
     GLMNET = wflow_glmnet,
+    RANDOM_FOREST = wflow_rf,
     XGBOOST = wflow_xgboost,
     MARS = wflow_mars,
-    SVM = wflow_svm,
-    RANDOM_FOREST = wflow_rf
+    SVM = wflow_svm
   )
 
   wflows

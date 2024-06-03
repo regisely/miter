@@ -1,4 +1,3 @@
-#### No progress when using fit only
 #' @importFrom generics fit
 #' @importFrom yardstick metric_set rmse
 #' @export
@@ -111,7 +110,10 @@ miter_fit.tbl_df <- function(data, workflow,
         )
       }
     }
-    best_parameters <- tune::select_best(fitted_cv)
+    best_parameters <- tune::select_best(
+                         fitted_cv,
+                         metric = names(attr(metric, "metrics"))
+                       )
     workflow <- tune::finalize_workflow(workflow, best_parameters)
   }
 
@@ -176,7 +178,10 @@ miter_fit.rsplit <- function(data, workflow,
         )
       }
     }
-    best_parameters <- tune::select_best(fitted_cv)
+    best_parameters <- tune::select_best(
+                         fitted_cv,
+                         metric = names(attr(metric, "metrics"))
+                       )
     workflow <- tune::finalize_workflow(workflow, best_parameters)
   }
 
@@ -300,7 +305,12 @@ miter_fit.nested_cv <- function(data, workflow,
         )
       ),
       tuned_workflows = list(
-        tune::finalize_workflow(workflow, tune::select_best(fitted_inner))
+        tune::finalize_workflow(
+          workflow,
+          tune::select_best(
+            fitted_inner, metric = names(attr(metric, "metrics"))
+          )
+        )
       ),
       fitted_outer =
         list(

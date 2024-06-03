@@ -1,5 +1,3 @@
-##CHECK ... arguments
-##Create classes (nested_results and miter_pred)
 #' @export
 create_ensemble <- function(data, workflows, n_models = NULL,
                             fit_resamples = FALSE,

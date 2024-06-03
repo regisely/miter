@@ -27,9 +27,9 @@ check_workflows <- function(workflows) {
     rlang::abort("Argument `workflows` should be a list of workflows.")
   }
 
-  if (!all(purrr::map_lgl(workflows, ~ inherits(.x, "workflow")))) {
-    rlang::abort("All elements of `workflows` should have class workflow.")
-  }
+  ## if (!all(purrr::map_lgl(workflows, ~ inherits(.x, "workflow")))) {
+  ##     rlang::abort("All elements of `workflows` should have class workflow.")
+  ## }
 
   wflow_names <- names(workflows)
 

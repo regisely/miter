@@ -1,3 +1,9 @@
+#' @export
+generate_lags <- function(data, variable, lags = 1){
+  arg <- rlang::enquo(variable)
+  data %>%
+    timetk::tk_augment_lags(!!arg, .lags = lags)
+}
 
 add_attr <- function(x, name, attribute) {
   attr(x, name) <- attribute

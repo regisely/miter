@@ -1,8 +1,3 @@
-## Check if there is .id_resamples when resamples=TRUE
-## Add inner=TRUE option
-## Maybe use resamples = TRUE as default when there is .id_resamples
-## Allow multiple metrics
-## Keep original order of models or arrange by rank
 #' @importFrom yardstick metric_set rmse
 #' @export
 calculate_metrics <- function(object,
@@ -73,6 +68,10 @@ calculate_metrics.miter_pred <- function(object,
     out <- out %>%
       dplyr::filter(rank == 1) %>%
       dplyr::select(-rank)
+      dplyr::arrange(across({{ ids }}), metric) %>%
+      dplyr::group_by(across({{ ids }})) %>%
+      dplyr::slice(1) %>%
+      dplyr::ungroup()
   }
 
   attr(out, "ids") <- ids
@@ -114,7 +113,11 @@ calculate_metrics.miter_tbl <- function(object,
   if (select_best) {
     out <- out %>%
       dplyr::filter(rank == 1) %>%
-      dplyr::select(-rank)
+      dplyr::select(-rank) %>%
+      dplyr::arrange(across({{ ids }}), metric) %>%
+      dplyr::group_by(across({{ ids }})) %>%
+      dplyr::slice(1) %>%
+      dplyr::ungroup()
   }
 
   attr(out, "ids") <- ids
@@ -156,7 +159,11 @@ calculate_metrics.miter_ensemble <- function(object,
   if (select_best) {
     out <- out %>%
       dplyr::filter(rank == 1) %>%
-      dplyr::select(-rank)
+      dplyr::select(-rank) %>%
+      dplyr::arrange(across({{ ids }}), metric) %>%
+      dplyr::group_by(across({{ ids }})) %>%
+      dplyr::slice(1) %>%
+      dplyr::ungroup()
   }
 
   attr(out, "ids") <- ids

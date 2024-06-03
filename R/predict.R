@@ -1,10 +1,3 @@
-## Check missing and default arguments
-## Deal with series with predictors
-## Do an external check errors function for fit
-## Reject predict on resamples
-## Accept data mask in new_data argument (check predict on ensemble)
-## Deal with duplicated resamples predictions  (param summarize of collect_predictions?)
-## Leave parameters in resamples predictions?
 #' @importFrom stats predict
 #' @export
 predict.miter_tbl <- function(object,
@@ -170,7 +163,13 @@ miter_predict.rset <- function(object,
   all_data <- data$splits[[1]]$data %>%
     dplyr::mutate(.row = dplyr::row_number())
 
-  best_parameters <- tune::select_best(object) %>%
+  best_parameters <- tune::select_best(
+                       object,
+                       metric = object %>%
+                         collect_metrics() %>%
+                         pull(.metric) %>%
+                         unique()
+                       ) %>%
     dplyr::pull(.config)
 
   out <- tune::collect_predictions(object) %>%
@@ -220,7 +219,13 @@ miter_predict.nested_cv <- function(object,
       dplyr::mutate(.row = dplyr::row_number())
 
     out <- purrr::map2_dfr(object$id, object$fitted_inner, function(x, y) {
-      best_parameters <- tune::select_best(y) %>%
+      best_parameters <- tune::select_best(
+                           y,
+                           metric = object %>%
+                             collect_metrics() %>%
+                             pull(.metric) %>%
+                             unique()
+                         ) %>%
         dplyr::pull(.config)
 
       tune::collect_predictions(y) %>%

@@ -36,7 +36,9 @@ add_workflows.data.frame <- function(x, workflows) {
     rlang::warn("Existing workflows have been overwritten.")
   }
 
-  x <- x %>%
+  wflows_list <- workflows[sapply(workflows, function(x) class(x) != "workflow")]
+
+  x_out <- x %>%
     tidyr::expand_grid(
       tibble::tibble(
         models = wflow_names,
@@ -44,16 +46,37 @@ add_workflows.data.frame <- function(x, workflows) {
       )
     )
 
+  if (length(wflows_list) != 0) {
+    x_out <- x_out %>%
+      dplyr::left_join(
+        purrr::map2_dfr(
+          wflows_list,
+          names(wflows_list),
+          function(y, z) x %>%
+                         dplyr::mutate(models = z, workflows_new = y) %>%
+                         dplyr::select(-data)
+        ),
+        by = c(ids, "models")
+      ) %>%
+      dplyr::rowwise() %>%
+      dplyr::mutate(is_null = ifelse(is.null(workflows_new), 1, 0)) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(
+        workflows = ifelse(is_null == 1, workflows, workflows_new)
+      ) %>%
+      dplyr::select(-workflows_new, -is_null)
+  }
+
   if (!is.null(ids)) {
-    x <- x %>%
+    x_out <- x_out %>%
       dplyr::relocate(models, .after = dplyr::all_of(ids))
   } else {
-    x <- x %>%
+    x_out <- x_out %>%
       dplyr::relocate(models, .before = dplyr::everything())
   }
 
-  attr(x, "ids") <- ids
-  class(x) <- classes
+  attr(x_out, "ids") <- ids
+  class(x_out) <- classes
 
-  x
+  x_out
 }

@@ -1,4 +1,3 @@
-## TODO: support formulas with ~ like map
 #' @export
 cv_split <- function(x,
                      column = splits,
