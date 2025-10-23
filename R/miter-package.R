@@ -83,6 +83,5 @@ NULL
 #' autoplot(metrics)
 #' }
 #'
-#' @docType package
 #' @name miter-package
 NULL

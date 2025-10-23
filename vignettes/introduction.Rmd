@@ -41,7 +41,7 @@ library(ggplot2)
 
 The package includes `icms_br`, a dataset of Brazilian state tax revenue:
 
-```{r}
+```{r, eval=FALSE}
 data(icms_br)
 head(icms_br)
 
@@ -61,7 +61,7 @@ length(unique(icms_br$uf))
 
 A miter table is a nested tibble that groups data by specified variables:
 
-```{r}
+```{r, eval=FALSE}
 tbl <- icms_br %>%
   filter(uf %in% c("SP", "RJ")) %>%
   group_by(uf) %>%
