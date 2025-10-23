@@ -120,6 +120,17 @@ print.miter_pred <- function(x, ...) {
   print(x, ...)
 }
 
+#' Convert to miter predictions object
+#'
+#' @description
+#' Converts a data frame to a `miter_pred` object with appropriate attributes.
+#'
+#' @param x A data frame containing predictions.
+#' @param ids Character vector of ID column names.
+#' @param outcome Character string naming the outcome variable.
+#'
+#' @return A `miter_pred` object.
+#'
 #' @export
 as_miter_pred <- function(x, ids, outcome) {
   UseMethod("as_miter_pred")
@@ -133,6 +144,22 @@ as_miter_pred.data.frame <- function(x, ids, outcome) {
   x
 }
 
+#' Internal prediction method for miter
+#'
+#' @description
+#' Internal generic function for generating predictions from different types of
+#' fitted objects. Dispatches on the class of `data`.
+#'
+#' @param object A fitted workflow object.
+#' @param data Training data or rsplit/rset object.
+#' @param new_data Optional new data for predictions.
+#' @param bind Character string specifying what to bind with predictions:
+#'   "outcome", "predictors", "all", or "none".
+#' @param ... Additional arguments passed to prediction methods.
+#'
+#' @return A data frame containing predictions.
+#'
+#' @keywords internal
 #' @export
 miter_predict <- function(object,
                           data,

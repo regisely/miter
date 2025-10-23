@@ -1,4 +1,11 @@
 #' @keywords internal
+#' @importFrom dplyr across all_of any_of
+#' @importFrom tidyr drop_na
+#' @importFrom tidyselect where
+#' @importFrom recipes step_rm
+#' @importFrom tune collect_metrics
+#' @importFrom stats as.formula sd
+#' @importFrom grDevices hcl
 "_PACKAGE"
 
 ## usethis namespace: start

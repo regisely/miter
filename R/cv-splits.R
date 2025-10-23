@@ -1,3 +1,30 @@
+#' Create cross-validation resamples for each group
+#'
+#' @description
+#' Creates V-fold cross-validation resamples for each group in a miter table
+#' using `rsample::vfold_cv()`.
+#'
+#' @param x A data frame or miter table.
+#' @param column The column containing the data to resample. Default is `splits`.
+#' @param colname Name for the new column containing resamples. Default is NULL.
+#' @param v Number of folds for cross-validation. Default is 5.
+#' @param repeats Number of times to repeat the V-fold cross-validation. Default is 1.
+#' @param strata A variable to use for stratified sampling.
+#' @param breaks Number of bins for stratification. Default is 4.
+#' @param pool The proportion of data used to determine splits. Default is 0.1.
+#'
+#' @return A miter table with an added column containing rset objects.
+#'
+#' @examples
+#' \dontrun{
+#' data(icms_br)
+#' icms_br %>%
+#'   miter_table() %>%
+#'   add_workflows(workflows) %>%
+#'   holdout_split(prop = 0.8) %>%
+#'   cv_split(v = 5)
+#' }
+#'
 #' @export
 cv_split <- function(x,
                      column = splits,
@@ -39,20 +66,26 @@ cv_split.data.frame <- function(x,
   breaks <- check_arg_len(x, breaks)
   pool <- check_arg_len(x, pool)
 
-  args_by_id <- x %>%
-    dplyr::distinct(dplyr::across(dplyr::all_of(ids))) %>%
-    dplyr::mutate(
-      v = rep_len(v, dplyr::n()),
-      repeats = rep_len(repeats, dplyr::n()),
-      strata = if (!is.null(strata)) rep_len(strata, dplyr::n()) else NULL,
-      breaks = rep_len(breaks, dplyr::n()),
-      pool = rep_len(pool, dplyr::n())
-    )
-
   if (is.null(ids)) {
+    args_by_id <- tibble::tibble(
+      v = v[1],
+      repeats = repeats[1],
+      strata = if (!is.null(strata)) strata[1] else NULL,
+      breaks = breaks[1],
+      pool = pool[1]
+    )
     x <- x %>%
       dplyr::bind_cols(args_by_id)
   } else {
+    args_by_id <- x %>%
+      dplyr::distinct(dplyr::across(dplyr::all_of(ids))) %>%
+      dplyr::mutate(
+        v = rep_len(v, dplyr::n()),
+        repeats = rep_len(repeats, dplyr::n()),
+        strata = if (!is.null(strata)) rep_len(strata, dplyr::n()) else NULL,
+        breaks = rep_len(breaks, dplyr::n()),
+        pool = rep_len(pool, dplyr::n())
+      )
     x <- x %>%
       dplyr::left_join(args_by_id, by = ids)
   }
@@ -80,6 +113,36 @@ cv_split.data.frame <- function(x,
   out
 }
 
+#' Create time-based cross-validation resamples for each group
+#'
+#' @description
+#' Creates time-based rolling origin resamples for each group in a miter table
+#' using the internal `rolling_cv()` function.
+#'
+#' @param x A data frame or miter table containing time series data.
+#' @param column The column containing the data to resample. Default is `splits`.
+#' @param colname Name for the new column containing resamples. Default is NULL.
+#' @param initial Number of samples in the initial training set. Can be a function.
+#'   Default is a function that returns 2/3 of the data.
+#' @param assess Number of samples in the assessment set. Can be a function.
+#'   Default is a function that returns 1/15 of the data.
+#' @param cumulative Logical. Should the training set grow with each resample? Default is TRUE.
+#' @param skip Number of samples to skip between resamples. Default is `assess`.
+#' @param lag A value to include a lag between training and testing. Default is 0.
+#' @param slice_limit Maximum number of resamples to create. Default is Inf.
+#'
+#' @return A miter table with an added column containing rset objects.
+#'
+#' @examples
+#' \dontrun{
+#' data(icms_br)
+#' icms_br %>%
+#'   miter_table() %>%
+#'   add_workflows(workflows) %>%
+#'   holdout_time_split(prop = 0.8) %>%
+#'   cv_time_split(slice_limit = 5)
+#' }
+#'
 #' @export
 cv_time_split <- function(x,
                           column = splits,
@@ -124,21 +187,28 @@ cv_time_split.data.frame <- function(x,
   check_arg_len(x, lag)
   check_arg_len(x, slice_limit)
 
-  args_by_id <- x %>%
-    dplyr::distinct(dplyr::across(dplyr::all_of(ids))) %>%
-    dplyr::mutate(
-      initial = rep_len(initial, dplyr::n()),
-      assess = rep_len(assess, dplyr::n()),
-      cumulative = rep_len(cumulative, dplyr::n()),
-      skip = rep_len(skip, dplyr::n()),
-      lag = rep_len(lag, dplyr::n()),
-      slice_limit = rep_len(slice_limit, dplyr::n())
-    )
-
   if (is.null(ids)) {
+    args_by_id <- tibble::tibble(
+      initial = initial[1],
+      assess = assess[1],
+      cumulative = cumulative[1],
+      skip = skip[1],
+      lag = lag[1],
+      slice_limit = slice_limit[1]
+    )
     x <- x %>%
       dplyr::bind_cols(args_by_id)
   } else {
+    args_by_id <- x %>%
+      dplyr::distinct(dplyr::across(dplyr::all_of(ids))) %>%
+      dplyr::mutate(
+        initial = rep_len(initial, dplyr::n()),
+        assess = rep_len(assess, dplyr::n()),
+        cumulative = rep_len(cumulative, dplyr::n()),
+        skip = rep_len(skip, dplyr::n()),
+        lag = rep_len(lag, dplyr::n()),
+        slice_limit = rep_len(slice_limit, dplyr::n())
+      )
     x <- x %>%
       dplyr::left_join(args_by_id, by = ids)
   }
@@ -167,6 +237,33 @@ cv_time_split.data.frame <- function(x,
   out
 }
 
+#' Create nested time-based cross-validation resamples for each group
+#'
+#' @description
+#' Creates nested time-based cross-validation resamples for each group in a miter table.
+#' The outer resamples are used for model assessment and the inner resamples are used
+#' for tuning.
+#'
+#' @param x A data frame or miter table containing time series data.
+#' @param column The column containing the data to resample. Default is `splits`.
+#' @param colname Name for the new column containing nested resamples. Default is NULL.
+#' @param outside A function to create outer resamples. Default uses `rolling_cv()`
+#'   with 1/30 of data for assessment and a limit of 10 slices.
+#' @param inside A function to create inner resamples. Default uses `rolling_cv()`
+#'   with a limit of 5 slices.
+#'
+#' @return A miter table with an added column containing nested rset objects.
+#'
+#' @examples
+#' \dontrun{
+#' data(icms_br)
+#' icms_br %>%
+#'   miter_table() %>%
+#'   add_workflows(workflows) %>%
+#'   holdout_time_split(prop = 0.8) %>%
+#'   nested_cv_time_split()
+#' }
+#'
 #' @export
 nested_cv_time_split <- function(x,
                                  column = splits,
@@ -217,15 +314,23 @@ nested_cv_time_split.data.frame <- function(x,
   outside <- check_arg_len(x, outside)
   inside <- check_arg_len(x, inside)
 
-  args_by_id <- x %>%
-    dplyr::distinct(dplyr::across(dplyr::all_of(ids))) %>%
-    dplyr::mutate(
-      outside = rep_len(outside, dplyr::n()),
-      inside = rep_len(inside, dplyr::n())
+  if (is.null(ids)) {
+    args_by_id <- tibble::tibble(
+      outside = outside[1],
+      inside = inside[1]
     )
-
-  x <- x %>%
-    dplyr::left_join(args_by_id, by = ids)
+    x <- x %>%
+      dplyr::bind_cols(args_by_id)
+  } else {
+    args_by_id <- x %>%
+      dplyr::distinct(dplyr::across(dplyr::all_of(ids))) %>%
+      dplyr::mutate(
+        outside = rep_len(outside, dplyr::n()),
+        inside = rep_len(inside, dplyr::n())
+      )
+    x <- x %>%
+      dplyr::left_join(args_by_id, by = ids)
+  }
 
   out <- x %>%
     dplyr::rowwise() %>%
@@ -250,6 +355,30 @@ nested_cv_time_split.data.frame <- function(x,
   out
 }
 
+#' Create rolling origin resamples for time series
+#'
+#' @description
+#' Creates rolling origin resamples for time series cross-validation. This is
+#' similar to `rsample::rolling_origin()` but with additional flexibility.
+#'
+#' @param data A data frame containing time series data.
+#' @param initial Number of samples in the initial training set. Default is 2/3 of data.
+#' @param assess Number of samples in the assessment set. Default is 1/15 of data.
+#' @param cumulative Logical. Should the training set grow with each resample? Default is TRUE.
+#' @param skip Number of samples to skip between resamples. Default is `assess`.
+#' @param lag A value to include a lag between training and testing. Default is 0.
+#' @param slice_limit Maximum number of resamples to create. Default is Inf.
+#' @param ... Additional arguments (not currently used).
+#'
+#' @return An rset object containing rolling origin resamples.
+#'
+#' @examples
+#' \dontrun{
+#' data(icms_br)
+#' icms_sample <- icms_br %>% dplyr::filter(state == "SP")
+#' resamples <- rolling_cv(icms_sample, slice_limit = 5)
+#' }
+#'
 #' @importFrom rsample make_splits
 #' @importFrom rsample new_rset
 #' @export
