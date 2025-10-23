@@ -27,7 +27,7 @@ Suggests:
     rmarkdown
 Config/testthat/edition: 3
 VignetteBuilder: knitr
-Imports: 
+Imports:
     cli,
     dplyr,
     finetune,
@@ -42,6 +42,7 @@ Imports:
     rsample,
     tibble,
     tidyr,
+    tidyselect,
     timetk,
     tune,
     workflows,

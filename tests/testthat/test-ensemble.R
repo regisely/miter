@@ -3,10 +3,10 @@ test_that("create_ensemble works with predictions", {
 
   data(icms_br)
   icms_sample <- icms_br %>%
-    dplyr::filter(uf == "SP") %>%
+    dplyr::filter(state == "SP") %>%
     dplyr::filter(date >= as.Date("2010-01-01"))
 
-  workflows <- initialize_ts_models(icms_sample, "value", NULL, "date")
+  workflows <- initialize_ts_models(icms_sample, "icms", NULL, "date")
 
   tbl <- icms_sample %>%
     miter_table() %>%
@@ -28,10 +28,10 @@ test_that("add_ensemble combines predictions", {
 
   data(icms_br)
   icms_sample <- icms_br %>%
-    dplyr::filter(uf == "SP") %>%
+    dplyr::filter(state == "SP") %>%
     dplyr::filter(date >= as.Date("2010-01-01"))
 
-  workflows <- initialize_ts_models(icms_sample, "value", NULL, "date")
+  workflows <- initialize_ts_models(icms_sample, "icms", NULL, "date")
 
   tbl <- icms_sample %>%
     miter_table() %>%

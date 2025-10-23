@@ -81,7 +81,7 @@ create_ensemble <- function(data, workflows, n_models = NULL,
   data_col <- data %>%
     dplyr::group_split(dplyr::across(ids), .keep = FALSE) %>%
     purrr::map(
-      function(x) dplyr::select(x, tidyselect:::where(~!all(is.na(.x))))
+      function(x) dplyr::select(x, tidyselect::where(~!all(is.na(.x))))
     )
 
   data_workflows <- tidyr::crossing(data_col, workflows) 

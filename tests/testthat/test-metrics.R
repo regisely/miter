@@ -3,13 +3,13 @@ test_that("calculate_metrics works on miter_pred", {
 
   data(icms_br)
   icms_sample <- icms_br %>%
-    dplyr::filter(uf %in% c("SP", "RJ")) %>%
+    dplyr::filter(state %in% c("SP", "RJ")) %>%
     dplyr::filter(date >= as.Date("2010-01-01"))
 
-  workflows <- initialize_ts_models(icms_sample, "value", "uf", "date")
+  workflows <- initialize_ts_models(icms_sample, "icms", "state", "date")
 
   tbl <- icms_sample %>%
-    dplyr::group_by(uf) %>%
+    dplyr::group_by(state) %>%
     miter_table() %>%
     add_workflows(workflows[1:2]) %>%
     holdout_time_split(prop = 0.8)
@@ -30,10 +30,10 @@ test_that("select_best parameter works", {
 
   data(icms_br)
   icms_sample <- icms_br %>%
-    dplyr::filter(uf == "SP") %>%
+    dplyr::filter(state == "SP") %>%
     dplyr::filter(date >= as.Date("2010-01-01"))
 
-  workflows <- initialize_ts_models(icms_sample, "value", NULL, "date")
+  workflows <- initialize_ts_models(icms_sample, "icms", NULL, "date")
 
   tbl <- icms_sample %>%
     miter_table() %>%

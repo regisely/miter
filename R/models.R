@@ -62,8 +62,6 @@ initialize_ts_models <- function(data,
 
   check_ts_models_packages()
 
-  require("modeltime")
-
   mv_vars <- colnames(data)[which(!colnames(data) %in%
                                   c(id_var, outcome_var))]
   formula_ts <- as.formula(
@@ -160,8 +158,6 @@ initialize_all_models <- function(data,
                                   fix_arima_specs = FALSE) {
 
   check_models_packages()
-
-  require("modeltime")
 
   mv_vars <- colnames(data)[which(!colnames(data) %in% c(id_var, outcome_var))]
   formula_ts <- as.formula(paste0(outcome_var, " ~ ", "`", date_var, "`"))
