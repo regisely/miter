@@ -1,3 +1,21 @@
+#' Generate lagged features
+#'
+#' @description
+#' Creates lagged versions of a variable for use in forecasting models.
+#' Wraps `timetk::tk_augment_lags()`.
+#'
+#' @param data A data frame.
+#' @param variable The variable to lag (can be unquoted).
+#' @param lags Integer or vector of integers specifying lag periods. Default is 1.
+#'
+#' @return A data frame with added lag columns.
+#'
+#' @examples
+#' \dontrun{
+#' data(icms_br)
+#' icms_lagged <- generate_lags(icms_br, value, lags = 1:3)
+#' }
+#'
 #' @export
 generate_lags <- function(data, variable, lags = 1){
   arg <- rlang::enquo(variable)

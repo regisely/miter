@@ -1,3 +1,27 @@
+#' Create ensemble models from predictions
+#'
+#' @description
+#' Creates ensemble models by using predictions from base models as features.
+#' Optionally selects top N models based on performance before creating ensemble.
+#'
+#' @param data A `miter_pred` object containing predictions from base models.
+#' @param workflows A list of workflow objects for ensemble models.
+#' @param n_models Optional integer specifying how many top models to include
+#'   in the ensemble. If NULL, uses all models.
+#' @param fit_resamples Logical indicating whether to fit on resamples. Default is FALSE.
+#' @param metric A `yardstick::metric_set` for selecting top models.
+#' @param cv Cross-validation function or NULL. Default creates simple CV splits.
+#' @param ... Additional arguments passed to fitting functions.
+#'
+#' @return A `miter_ensemble` object containing fitted ensemble models.
+#'
+#' @examples
+#' \dontrun{
+#' # After generating predictions from base models
+#' ensemble_workflows <- initialize_ensemble_models(predictions, "date")
+#' ensemble <- create_ensemble(predictions, ensemble_workflows, n_models = 5)
+#' }
+#'
 #' @export
 create_ensemble <- function(data, workflows, n_models = NULL,
                             fit_resamples = FALSE,
@@ -104,6 +128,24 @@ print.miter_ensemble <- function(x, ...) {
   print(x, ...)
 }
 
+#' Add ensemble predictions to base model predictions
+#'
+#' @description
+#' Adds ensemble model predictions to existing base model predictions,
+#' creating a combined prediction object.
+#'
+#' @param object A `miter_ensemble` object with fitted ensemble models.
+#' @param preds A `miter_pred` object with base model predictions.
+#' @param ... Additional arguments passed to prediction methods.
+#'
+#' @return A `miter_pred` object containing both base and ensemble predictions.
+#'
+#' @examples
+#' \dontrun{
+#' # After creating ensemble
+#' combined_preds <- add_ensemble(ensemble_tbl, base_predictions)
+#' }
+#'
 #' @export
 add_ensemble <- function(object, preds, ...) {
   ids <- attr(object, "ids")

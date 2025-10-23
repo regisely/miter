@@ -1,3 +1,25 @@
+#' Autoplot method for miter predictions
+#'
+#' @description
+#' Creates visualization of model predictions. Automatically detects date
+#' variables for time series plots, otherwise creates scatter plots.
+#'
+#' @param x A `miter_pred` object.
+#' @param date_var Character string naming the date variable, or "auto" for
+#'   automatic detection. Default is "auto".
+#' @param ... Additional arguments passed to `facet_wrap()`.
+#'
+#' @return A ggplot2 object.
+#'
+#' @examples
+#' \dontrun{
+#' # Plot predictions
+#' autoplot(predictions)
+#'
+#' # Specify date variable
+#' autoplot(predictions, date_var = "date")
+#' }
+#'
 #' @importFrom ggplot2 autoplot ggplot aes geom_line geom_abline geom_point labs facet_wrap scale_color_manual geom_errorbar theme_bw geom_dotplot
 #' @importFrom rlang sym
 #' @export
@@ -50,6 +72,23 @@ autoplot.miter_pred <- function(x, date_var = "auto", ...) {
   suppressWarnings(g)
 }
 
+#' Autoplot method for miter metrics
+#'
+#' @description
+#' Creates visualization of model performance metrics with optional standard
+#' error bars if resamples were used.
+#'
+#' @param x A `miter_metrics` object.
+#' @param ... Additional arguments passed to `facet_wrap()`.
+#'
+#' @return A ggplot2 object.
+#'
+#' @examples
+#' \dontrun{
+#' metrics <- calculate_metrics(predictions)
+#' autoplot(metrics)
+#' }
+#'
 #' @export
 autoplot.miter_metrics <- function(x, ...) {
   ids <- attr(x, "ids")

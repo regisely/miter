@@ -1,3 +1,36 @@
+#' Calculate performance metrics
+#'
+#' @description
+#' Calculates performance metrics for predictions from miter models.
+#' Can handle predictions from resamples and select the best performing model.
+#'
+#' @param object A `miter_pred`, `miter_tbl`, or `miter_ensemble` object.
+#' @param column Optional column name for miter table objects.
+#' @param metric A `yardstick::metric_set` for evaluation. Default is RMSE.
+#' @param resamples Logical indicating whether to calculate metrics across
+#'   resamples (with standard errors). Default is FALSE.
+#' @param select_best Logical indicating whether to return only the best
+#'   performing model for each group. Default is FALSE.
+#'
+#' @return A `miter_metrics` object containing performance metrics.
+#'
+#' @examples
+#' \dontrun{
+#' library(yardstick)
+#'
+#' # Calculate RMSE
+#' metrics <- calculate_metrics(predictions)
+#'
+#' # Calculate multiple metrics
+#' metrics <- calculate_metrics(
+#'   predictions,
+#'   metric = metric_set(rmse, mae, rsq)
+#' )
+#'
+#' # Get only best model per group
+#' best <- calculate_metrics(predictions, select_best = TRUE)
+#' }
+#'
 #' @importFrom yardstick metric_set rmse
 #' @export
 calculate_metrics <- function(object,

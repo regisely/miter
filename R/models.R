@@ -1,3 +1,22 @@
+#' Create a time series recipe
+#'
+#' @description
+#' Creates a simple recipe for time series modeling with a date variable as the
+#' primary predictor.
+#'
+#' @param data A data frame.
+#' @param outcome_var Character string naming the outcome variable.
+#' @param id_var Character string naming the ID variable (optional).
+#' @param date_var Character string naming the date variable.
+#'
+#' @return A `recipe` object.
+#'
+#' @examples
+#' \dontrun{
+#' data(icms_br)
+#' rec <- recipe_ts(icms_br, "value", "uf", "date")
+#' }
+#'
 #' @importFrom hardhat tune
 #' @export
 recipe_ts <- function(data,
@@ -15,6 +34,26 @@ recipe_ts <- function(data,
   
 }
 
+#' Initialize time series models
+#'
+#' @description
+#' Creates a list of workflow objects for common time series models including
+#' NAIVE, SNAIVE, ETS, ARIMA, and PROPHET. Requires the modeltime package.
+#'
+#' @param data A data frame containing the time series data.
+#' @param outcome_var Character string naming the outcome variable.
+#' @param id_var Character string naming the ID variable (optional).
+#' @param date_var Character string naming the date variable.
+#'
+#' @return A named list of workflow objects for time series models.
+#'
+#' @examples
+#' \dontrun{
+#' data(icms_br)
+#' workflows <- initialize_ts_models(icms_br, "value", "uf", "date")
+#' names(workflows)
+#' }
+#'
 #' @export
 initialize_ts_models <- function(data,
                                  outcome_var,
@@ -81,6 +120,37 @@ initialize_ts_models <- function(data,
   
 }
 
+#' Initialize comprehensive set of models
+#'
+#' @description
+#' Creates a list of workflow objects for a comprehensive set of time series and
+#' machine learning models including NAIVE, SNAIVE, ETS, ARIMA, PROPHET, boosted
+#' variants, GLMNET, Random Forest, XGBoost, MARS, and SVM. Requires modeltime
+#' and additional modeling packages.
+#'
+#' @param data A data frame containing the time series data.
+#' @param outcome_var Character string naming the outcome variable.
+#' @param id_var Character string naming the ID variable (optional).
+#' @param date_var Character string naming the date variable.
+#' @param outcome_lags Integer specifying number of lags of outcome to include
+#'   as features. Default is 0.
+#' @param fix_arima_specs Logical. If TRUE, fits ARIMA models first to determine
+#'   optimal specifications for each series. Default is FALSE.
+#'
+#' @return A named list of workflow objects for multiple model types.
+#'
+#' @examples
+#' \dontrun{
+#' data(icms_br)
+#' workflows <- initialize_all_models(
+#'   icms_br,
+#'   outcome_var = "value",
+#'   id_var = "uf",
+#'   date_var = "date",
+#'   outcome_lags = 3
+#' )
+#' }
+#'
 #' @export
 initialize_all_models <- function(data,
                                   outcome_var,
@@ -328,6 +398,23 @@ initialize_all_models <- function(data,
   wflows
 }
 
+#' Initialize ensemble models
+#'
+#' @description
+#' Creates ensemble model workflows that combine predictions from multiple base
+#' models. Creates both linear model and GLMNET ensembles.
+#'
+#' @param preds A `miter_pred` object containing predictions from base models.
+#' @param date_var Character string naming the date variable.
+#'
+#' @return A named list of workflow objects for ensemble models.
+#'
+#' @examples
+#' \dontrun{
+#' # After fitting base models and generating predictions
+#' ensemble_workflows <- initialize_ensemble_models(predictions, "date")
+#' }
+#'
 #' @export
 initialize_ensemble_models <- function(preds, date_var) {
 

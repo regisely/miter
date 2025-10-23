@@ -1,0 +1,266 @@
+---
+title: "Introduction to miter"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to miter}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+# Overview
+
+The **miter** package provides tools for iterative modeling and forecasting with tidymodels. It facilitates creating nested tables for grouped time series data, adding multiple modeling workflows, performing cross-validation, fitting models, generating predictions, and creating ensemble models.
+
+## Installation
+
+```{r, eval=FALSE}
+# Install from GitHub
+devtools::install_github("regisely/miter")
+```
+
+## Load Package
+
+```{r setup, message=FALSE}
+library(miter)
+library(dplyr)
+library(ggplot2)
+```
+
+# Getting Started
+
+## Example Data
+
+The package includes `icms_br`, a dataset of Brazilian state tax revenue:
+
+```{r}
+data(icms_br)
+head(icms_br)
+
+# View structure
+str(icms_br)
+
+# Check date range
+range(icms_br$date)
+
+# Number of states
+length(unique(icms_br$uf))
+```
+
+## Basic Workflow
+
+### 1. Create a Miter Table
+
+A miter table is a nested tibble that groups data by specified variables:
+
+```{r}
+tbl <- icms_br %>%
+  filter(uf %in% c("SP", "RJ")) %>%
+  group_by(uf) %>%
+  miter_table()
+
+tbl
+```
+
+### 2. Initialize and Add Workflows
+
+Create modeling workflows for your time series:
+
+```{r, eval=FALSE}
+# Initialize time series models
+workflows <- initialize_ts_models(
+  data = icms_br,
+  outcome_var = "value",
+  id_var = "uf",
+  date_var = "date"
+)
+
+# Add workflows to table
+tbl <- tbl %>%
+  add_workflows(workflows)
+
+tbl
+```
+
+### 3. Create Data Splits
+
+Create holdout splits for train/test evaluation:
+
+```{r, eval=FALSE}
+tbl <- tbl %>%
+  holdout_time_split(prop = 0.8)
+
+tbl
+```
+
+### 4. Fit Models
+
+Fit all workflows to your data:
+
+```{r, eval=FALSE}
+tbl <- tbl %>%
+  fit(splits, control = control_miter(progress = TRUE))
+
+tbl
+```
+
+### 5. Generate Predictions
+
+Extract predictions from fitted models:
+
+```{r, eval=FALSE}
+preds <- tbl %>%
+  predict(fitted_splits)
+
+head(preds)
+```
+
+### 6. Calculate Metrics
+
+Evaluate model performance:
+
+```{r, eval=FALSE}
+metrics <- calculate_metrics(preds)
+metrics
+```
+
+### 7. Visualize Results
+
+Plot predictions and metrics:
+
+```{r, eval=FALSE}
+# Plot predictions
+autoplot(preds)
+
+# Plot metrics
+autoplot(metrics)
+```
+
+# Advanced Features
+
+## Cross-Validation
+
+Create resamples for hyperparameter tuning:
+
+```{r, eval=FALSE}
+tbl <- tbl %>%
+  cv_time_split(
+    column = splits,
+    initial = 36,
+    assess = 12,
+    slice_limit = 10
+  ) %>%
+  fit(resamples_train)
+```
+
+## Nested Cross-Validation
+
+For more robust evaluation:
+
+```{r, eval=FALSE}
+tbl <- tbl %>%
+  nested_cv_time_split(data) %>%
+  fit(nested_cv_data)
+```
+
+## Ensemble Models
+
+Create ensemble models from base model predictions:
+
+```{r, eval=FALSE}
+# Initialize ensemble workflows
+ensemble_workflows <- initialize_ensemble_models(preds, "date")
+
+# Create ensemble (using top 5 models)
+ensemble <- create_ensemble(
+  data = preds,
+  workflows = ensemble_workflows,
+  n_models = 5
+)
+
+# Add ensemble predictions
+combined_preds <- add_ensemble(ensemble, preds)
+
+# Evaluate
+metrics_combined <- calculate_metrics(combined_preds)
+autoplot(metrics_combined)
+```
+
+## Comprehensive Model Set
+
+Use a wider range of models:
+
+```{r, eval=FALSE}
+workflows_all <- initialize_all_models(
+  data = icms_br,
+  outcome_var = "value",
+  id_var = "uf",
+  date_var = "date",
+  outcome_lags = 3
+)
+
+# Use ARIMA specifications fitted to data
+workflows_fixed <- initialize_all_models(
+  data = icms_br,
+  outcome_var = "value",
+  id_var = "uf",
+  date_var = "date",
+  outcome_lags = 3,
+  fix_arima_specs = TRUE
+)
+```
+
+## Custom Control Parameters
+
+Fine-tune the fitting process:
+
+```{r, eval=FALSE}
+# Standard control
+ctrl <- control_miter(
+  progress = TRUE,
+  verbose = FALSE,
+  save_pred = TRUE,
+  allow_par = TRUE
+)
+
+# Racing control (with early stopping)
+ctrl_race <- control_miter_race(
+  burn_in = 5,
+  alpha = 0.01,
+  num_ties = 10
+)
+
+# Use in fitting
+tbl <- tbl %>%
+  fit(resamples_train, control = ctrl_race)
+```
+
+# Tips and Best Practices
+
+1. **Start Small**: Begin with a subset of your data and a few models to test your workflow
+
+2. **Use Progress Bars**: Set `progress = TRUE` in `control_miter()` to monitor long-running fits
+
+3. **Save Intermediate Results**: Store fitted tables and predictions as you go
+
+4. **Monitor Memory**: With many models and large datasets, consider processing in batches
+
+5. **Leverage Parallelization**: Set `allow_par = TRUE` and configure a parallel backend for faster fitting
+
+6. **Validate on Holdout**: Always create a final holdout set that isn't used during development
+
+7. **Compare Metrics**: Use `calculate_metrics()` with different metric sets to get a complete picture
+
+# Conclusion
+
+The miter package streamlines the process of fitting and evaluating multiple models across grouped time series data. By leveraging the tidymodels ecosystem, it provides a consistent and efficient interface for iterative forecasting workflows.
+
+For more information, see the package documentation with `?miter` or visit the GitHub repository.

@@ -1,3 +1,34 @@
+#' Fit models to miter table
+#'
+#' @description
+#' Fits workflows to data in a miter table. This method handles tuning parameters
+#' automatically if needed, using cross-validation resamples when available.
+#'
+#' @param object A `miter_tbl` object containing workflows and data.
+#' @param column The column containing data to fit models on (e.g., `data`, `splits`).
+#' @param metric A `yardstick::metric_set` for model evaluation during tuning.
+#'   Default is `yardstick::metric_set(rmse)`.
+#' @param grid Number of grid points or a grid data frame for tuning.
+#' @param control A control object from `control_miter()` or `control_miter_race()`.
+#' @param param_info Additional parameter information for tuning.
+#' @param ... Additional arguments passed to fitting functions.
+#'
+#' @return A `miter_tbl` with a new column containing fitted models.
+#'
+#' @examples
+#' \dontrun{
+#' library(dplyr)
+#' data(icms_br)
+#' workflows <- initialize_ts_models(icms_br, "value", "uf", "date")
+#'
+#' tbl <- icms_br %>%
+#'   group_by(uf) %>%
+#'   miter_table() %>%
+#'   add_workflows(workflows) %>%
+#'   holdout_time_split() %>%
+#'   fit(splits)
+#' }
+#'
 #' @importFrom generics fit
 #' @importFrom yardstick metric_set rmse
 #' @export
@@ -62,6 +93,26 @@ fit.miter_tbl <- function(object,
   out
 }
 
+#' Internal fitting function for miter
+#'
+#' @description
+#' Internal generic function for fitting workflows to different data types.
+#' Not typically called directly by users.
+#'
+#' @param object Data object to fit on.
+#' @param workflow A workflow object.
+#' @param fitted_cv Fitted cross-validation results (for reuse).
+#' @param resamples Resampling object for tuning.
+#' @param log_env Environment for progress logging.
+#' @param metric Metric set for evaluation.
+#' @param grid Grid specification for tuning.
+#' @param control Control object.
+#' @param param_info Parameter information for tuning.
+#' @param ... Additional arguments.
+#'
+#' @return A fitted workflow object.
+#'
+#' @keywords internal
 #' @export
 miter_fit <- function(object, workflow,
                       fitted_cv = NULL, resamples = NULL,

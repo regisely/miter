@@ -5,12 +5,16 @@ Authors@R:
     person("Regis A.", "Ely", , "regisaely@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-2468-3761"))
 Maintainer: Regis A. Ely <regisaely@gmail.com>
-Description: What the package does (one paragraph).
+Description: Provides tools for iterative modeling and forecasting with tidymodels.
+    Facilitates creating nested tables for grouped time series data, adding multiple
+    modeling workflows, performing cross-validation, fitting models, generating
+    predictions, and creating ensemble models. Designed for easy iteration over
+    multiple time series groups with consistent modeling pipelines.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
-Suggests: 
+Suggests:
     smooth,
     glmnet,
     kernlab,
@@ -18,8 +22,11 @@ Suggests:
     ranger,
     randomForest,
     modeltime,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
 Config/testthat/edition: 3
+VignetteBuilder: knitr
 Imports: 
     cli,
     dplyr,

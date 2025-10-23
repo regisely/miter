@@ -1,3 +1,33 @@
+#' Generate predictions from miter table
+#'
+#' @description
+#' Generates predictions from fitted models in a miter table. Can predict on
+#' new data or extract predictions from resampling results.
+#'
+#' @param object A `miter_tbl` containing fitted models.
+#' @param column The column containing fitted models (e.g., `fitted_data`, `fitted_splits`).
+#' @param new_data Optional new data for predictions. Required for some fitted objects.
+#' @param bind Character string specifying what to bind with predictions:
+#'   "outcome" (default), "predictors", "all", or "none".
+#' @param ... Additional arguments passed to prediction methods.
+#'
+#' @return A `miter_pred` object containing predictions.
+#'
+#' @examples
+#' \dontrun{
+#' library(dplyr)
+#' data(icms_br)
+#' workflows <- initialize_ts_models(icms_br, "value", "uf", "date")
+#'
+#' preds <- icms_br %>%
+#'   group_by(uf) %>%
+#'   miter_table() %>%
+#'   add_workflows(workflows) %>%
+#'   holdout_time_split() %>%
+#'   fit(splits) %>%
+#'   predict(fitted_splits)
+#' }
+#'
 #' @importFrom stats predict
 #' @export
 predict.miter_tbl <- function(object,
